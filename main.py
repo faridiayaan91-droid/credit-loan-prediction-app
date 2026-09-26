@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import joblib
 import pandas as pd
@@ -16,8 +17,6 @@ ORIGINAL_FIELDS = [
 
 
 def compute_feature_importance(model):
-    """Pulls XGBoost's feature_importances_ through the ColumnTransformer
-    and aggregates one-hot-encoded columns back to the original field."""
     try:
         base_est = model.calibrated_classifiers_[0].estimator
         preprocessor = base_est.named_steps["preprocessor"]
@@ -80,7 +79,7 @@ class LoanApplication(BaseModel):
     cb_person_cred_hist_length: int
 
 
-@app.get("/")
+@app.get("/api")
 def greet():
     return {"message": "hello, world"}
 
@@ -102,3 +101,7 @@ def predict(data: LoanApplication):
         "threshold": float(ml_model["threshold"]),
         "result": "high risk" if prediction == 1 else "low risk"
     }
+
+
+# Yeh sabse aakhir mein hona chahiye — baaki saari routes ke baad
+app.mount("/", StaticFiles(directory="static", html=True), name="frontend")
