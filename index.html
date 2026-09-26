@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Credit Ledger — Risk Assessor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="masthead-inner">
+      <span class="mark">§</span>
+      <div>
+        <h1>Credit Ledger</h1>
+        <p class="tagline">Loan default risk, assessed against your model</p>
+      </div>
+    </div>
+
+    <div class="masthead-actions">
+      <div class="endpoint-field">
+        <label for="apiUrl">API endpoint</label>
+        <input type="text" id="apiUrl" value="http://127.0.0.1:8000/predict" />
+      </div>
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <form id="riskForm" class="ledger">
+
+      <fieldset>
+        <legend>Applicant</legend>
+
+        <div class="row">
+          <label for="person_age">Age</label>
+          <input type="number" id="person_age" min="18" max="100" value="28" required />
+        </div>
+
+        <div class="row">
+          <label for="person_income">Annual income (USD)</label>
+          <input type="number" id="person_income" min="0" step="100" value="55000" required />
+        </div>
+
+        <div class="row">
+          <label for="person_home_ownership">Home ownership</label>
+          <select id="person_home_ownership">
+            <option value="RENT">Rent</option>
+            <option value="MORTGAGE">Mortgage</option>
+            <option value="OWN">Own</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="person_emp_length">Employment length (years)</label>
+          <input type="number" id="person_emp_length" min="0" max="60" step="0.5" value="4" required />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Loan details</legend>
+
+        <div class="row">
+          <label for="loan_intent">Purpose</label>
+          <select id="loan_intent">
+            <option value="PERSONAL">Personal</option>
+            <option value="EDUCATION">Education</option>
+            <option value="MEDICAL">Medical</option>
+            <option value="VENTURE">Venture</option>
+            <option value="HOMEIMPROVEMENT">Home improvement</option>
+            <option value="DEBTCONSOLIDATION">Debt consolidation</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="loan_grade">Loan grade</label>
+          <select id="loan_grade">
+            <option>A</option><option>B</option><option>C</option>
+            <option>D</option><option>E</option><option>F</option><option>G</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="loan_amnt">Loan amount (USD)</label>
+          <input type="number" id="loan_amnt" min="0" step="100" value="10000" required />
+        </div>
+
+        <div class="row">
+          <label for="loan_int_rate">Interest rate (%)</label>
+          <input type="number" id="loan_int_rate" min="0" max="40" step="0.01" value="11.5" required />
+        </div>
+
+        <div class="row">
+          <label for="loan_percent_income">Loan / income ratio</label>
+          <input type="number" id="loan_percent_income" min="0" max="1" step="0.01" value="0.18" required />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Credit history</legend>
+
+        <div class="row">
+          <label for="cb_person_default_on_file">Prior default on file</label>
+          <select id="cb_person_default_on_file">
+            <option value="N">No</option>
+            <option value="Y">Yes</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="cb_person_cred_hist_length">Credit history length (years)</label>
+          <input type="number" id="cb_person_cred_hist_length" min="0" max="60" value="6" required />
+        </div>
+      </fieldset>
+
+      <button type="submit" id="assessBtn">
+        <span class="btn-label">Assess risk</span>
+        <span class="btn-spinner" aria-hidden="true"></span>
+      </button>
+
+      <p class="error-line" id="errorLine" hidden></p>
+    </form>
+
+    <aside class="result-panel">
+      <div class="result-inner">
+        <p class="result-eyebrow">Predicted outcome</p>
+
+        <svg class="gauge" viewBox="0 0 220 130" aria-hidden="true">
+          <path class="gauge-track" d="M20,110 A90,90 0 0 1 200,110" />
+          <path class="gauge-fill" id="gaugeFill" d="M20,110 A90,90 0 0 1 200,110" />
+          <line class="threshold-tick" id="thresholdTick" x1="110" y1="26" x2="110" y2="42" />
+          <g id="needleGroup" transform="rotate(-90 110 110)">
+            <line class="needle" x1="110" y1="110" x2="110" y2="36" />
+          </g>
+          <circle class="gauge-hub" cx="110" cy="110" r="7" />
+        </svg>
+
+        <p class="probability" id="probabilityText">— %</p>
+        <p class="probability-label">default probability</p>
+
+        <div class="verdict" id="verdict">
+          <span class="verdict-dot"></span>
+          <span class="verdict-text">Awaiting input</span>
+        </div>
+
+        <dl class="detail-list">
+          <div><dt>Threshold</dt><dd id="thresholdText">—</dd></div>
+          <div><dt>Model call</dt><dd id="statusText">Not yet run</dd></div>
+        </dl>
+      </div>
+    </aside>
+  </main>
+
+  <section class="insights">
+    <div class="insight-card">
+      <h2>What the model weighs most</h2>
+      <p class="insight-note">Overall importance across the whole training set — not specific to one application.</p>
+      <div class="importance-list" id="importanceList">
+        <p class="loading-line">Loading model insights…</p>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="history-header">
+        <h2>Recent assessments</h2>
+        <button type="button" id="clearHistoryBtn" class="text-btn">Clear</button>
+      </div>
+      <p class="insight-note">Click one to reload it into the form.</p>
+      <div class="history-list" id="historyList">
+        <p class="empty-line">No assessments yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="ledger-footer">
+    <p>Connects to your FastAPI <code>/predict</code> endpoint · runs entirely client-side</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
